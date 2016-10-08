@@ -7,10 +7,28 @@ import re
 import lasagne
 import load_books as bk
 import time
+import argparse
 
-theano.config.optimization='None'
-theano.config.exception_verbosity='high'
-theano.config.compute_test_value='warn'
+cmd_arg_def = argparse.ArgumentParser(description="Learn from text")
+
+cmd_arg_def.add_argument("-d", "--debug", help=("Make it easier to catch errors""in the theano implementation"), action="store_true")
+
+cmd_arg_def.add_argument("-a", "--addr_dims", metavar='address_dimensions',
+type=int, required=True, help="Number of dimensons in the address")
+
+# hunch that addr dims * 2 is good
+cmd_arg_def.add_argument("-l", "--depth", metavar='memory_depth', type=int,
+required=True, help="Size of the vector stored at each memory location")
+
+cmd_arg_def.add_argument("-e", "--epochs", metavar='number_of_epochs', type=int,
+default=100, help="Number of training epochs")
+
+cmd_args = cmd_arg_def.parse_args()
+
+if cmd_args.debug:
+    theano.config.optimization='None'
+    theano.config.exception_verbosity='high'
+    theano.config.compute_test_value='warn'
 
 np.random.seed(5678)
 
@@ -57,13 +75,11 @@ learning_rate = 0.1 # Only used if updater requires it
 
 l2_param = 0.00
 
-epochs = 10
+epochs = cmd_args.epochs
 
-max_line_size = 80
-
-address_dims = 3
+address_dims = cmd_args.addr_dims
 address_size = address_dims * 2
-memory_depth = 1 # hunch that addr dims * 2 is good
+memory_depth = cmd_args.depth
 
 def expand_memory(address): # address is flattened vec of pairs of 2 values
     assert address.ndim == 1
@@ -118,9 +134,9 @@ def make_weights(n_in, n_out, name):
 w = make_weights(input_size + 1, mem_system_feats, 'w') # +1 for bias
 output_w = make_weights(input_size + 1, len(bk.character_set), 'output_w') # +1 for bias
 
-prev_read_address = theano.shared(np.zeros(address_size))
+prev_read_address = theano.shared(np.zeros(address_size), 'adrr')
 
-prev_memory = theano.shared(np.zeros(((2,) * address_dims) + (memory_depth,)))
+prev_memory = theano.shared(np.zeros(((2,) * address_dims) + (memory_depth,)), 'mem')
 
 saved_a_grad = theano.shared(np.zeros(prev_read_address.get_value().shape + w.get_value().shape))
 saved_m_grad = theano.shared(np.zeros(prev_memory.get_value().shape + w.get_value().shape))
