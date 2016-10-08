@@ -220,6 +220,11 @@ if l2_param > 0: bptt_cost += l2_param * T.sum((w ** 2) / 2) # L2 regularization
 j_read_address_w = T.jacobian(read_address, w)
 j_memory_w = T.reshape(T.jacobian(T.flatten(memory), w),
      prev_memory.get_value().shape + w.get_value().shape)
+# Reshape will make things broadcastable by default, but then updating fails
+# because shared variables are not broadcastable by default and broadcastable
+# has to match for a shared var update. We don't want to boradcast anyway. 
+# This is only a problem if the memory depth is 1, so make the depth not BCable
+j_memory_w = T.unbroadcast(j_memory_w, prev_memory.ndim - 1)
 
 update_a_grad = saved_a_grad, j_read_address_w
 update_m_grad = saved_m_grad, j_memory_w
