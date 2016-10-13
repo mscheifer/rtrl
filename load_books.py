@@ -35,10 +35,10 @@ for book in train_books:
     for letter in book:
         character_set.add(letter)
 
-print(sorted(character_set), len(character_set))
-
-char_indices = { character : c_idx for c_idx, character in enumerate(character_set) }
+char_indices = { character : c_idx for c_idx, character in enumerate(sorted(character_set)) }
 index_chars = { c_idx : character for character, c_idx in char_indices.items() }
+
+print(sorted(char_indices), len(character_set))
 
 def logits(str, int_type):
     assert len(char_indices) <= np.iinfo(int_type).max
